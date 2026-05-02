@@ -1,0 +1,3 @@
+/Users/anastasiagondarenko/Documents/cpp/project_shooter/build/CMakeFiles/MySFMLProject.dir
+/Users/anastasiagondarenko/Documents/cpp/project_shooter/build/CMakeFiles/edit_cache.dir
+/Users/anastasiagondarenko/Documents/cpp/project_shooter/build/CMakeFiles/rebuild_cache.dir
