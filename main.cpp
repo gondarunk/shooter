@@ -109,6 +109,15 @@ int main()
     );
 
     // =========================
+    // HIGH SCORE TEXT
+    // =========================
+    sf::Text highScoreText(font);
+    highScoreText.setCharacterSize(25);
+    highScoreText.setFillColor(sf::Color::Yellow);
+    highScoreText.setPosition(sf::Vector2f(window_x - 250, 55));
+
+
+    // =========================
     // ТЕКСТУРА ИГРОКА
     // =========================
     sf::Texture texture;
@@ -151,7 +160,8 @@ int main()
     std::vector<Target> targets;
 
     bool gameOver = false;
-    int score = 0;  
+    int score = 0;
+    int highScore = 0;  
 
     sf::Clock targetSpawnClock;
 
@@ -367,6 +377,10 @@ int main()
                         else if (target.getType() == 2) score += 60;  
                         else if (target.getType() == 3) score += 30;  
                     }
+                    if (score > highScore)
+                    {
+                        highScore = score;
+                    }
 
                     bomb.shooted = false;
                 }
@@ -432,6 +446,9 @@ int main()
         // Счёт
         scoreText.setString("Score: " + std::to_string(score));
         window.draw(scoreText);
+
+        highScoreText.setString("Record: " + std::to_string(highScore));
+        window.draw(highScoreText);
 
         // GAME OVER SCREEN
         if (gameOver)
