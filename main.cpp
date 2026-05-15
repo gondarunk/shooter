@@ -1,13 +1,19 @@
 #include <SFML/Graphics.hpp>
 #include <iostream>
 #include <vector>
+#include <cstdlib>
+#include <ctime>
 #include "include/Bomb.hpp"
 #include "include/Target.hpp"
 #include <algorithm>
 
 int main()
 {
-    // Создаем окно
+    std::srand(static_cast<unsigned int>(std::time(nullptr)));
+
+    // =========================
+    // ОКНО
+    // =========================
     int window_x = 800;
     int window_y = 600;
 
@@ -15,7 +21,6 @@ int main()
         sf::VideoMode(sf::Vector2u(window_x, window_y)),
         "Shooter Game"
     );
-
     window.setFramerateLimit(60);
 
     // =========================
@@ -23,10 +28,28 @@ int main()
     // =========================
     sf::Font font;
 
-    if (!font.openFromFile("../resources/arial.ttf"))
+    if (!font.openFromFile("resources/arial.ttf"))
     {
         std::cout << "Ошибка загрузки шрифта!" << std::endl;
     }
+
+    // =========================
+    // ФОН
+    // =========================
+    sf::Texture bgTexture;
+    if (!bgTexture.loadFromFile("resources/background.png"))
+    {
+        std::cout << "⚠️ Фон не загружен" << std::endl;
+    }
+
+    sf::Sprite bgSprite(bgTexture);
+
+    sf::Vector2u bgSize = bgTexture.getSize();
+    float scaleX = window_x / (float)bgSize.x;
+    float scaleY = window_y / (float)bgSize.y;
+
+    bgSprite.setScale(sf::Vector2f(scaleX, scaleY));
+    bgSprite.setPosition(sf::Vector2f(0, 0));
 
     // =========================
     // GAME OVER TEXT
@@ -73,11 +96,24 @@ int main()
     );
 
     // =========================
+    // SCORE TEXT
+    // =========================
+    sf::Text scoreText(font);
+
+    scoreText.setCharacterSize(30);
+    scoreText.setFillColor(sf::Color::White);
+
+
+    scoreText.setPosition(
+        sf::Vector2f(window_x - 250, 20)
+    );
+
+    // =========================
     // ТЕКСТУРА ИГРОКА
     // =========================
     sf::Texture texture;
 
-    bool textureLoaded = texture.loadFromFile("../resources/cat.png");
+    bool textureLoaded = texture.loadFromFile("resources/cat.png");
 
     if (!textureLoaded)
     {
@@ -88,7 +124,7 @@ int main()
 
     sf::Vector2u textureSize = texture.getSize();
 
-    float image_scale = 0.15f;
+    float image_scale = 0.125f;
 
     sprite.setScale(sf::Vector2f(image_scale, image_scale));
 
@@ -99,6 +135,9 @@ int main()
     float posY = window_y - image_y;
 
     sprite.setPosition(sf::Vector2f(posX, posY));
+
+    sf::Texture bombTexture;
+    if (!bombTexture.loadFromFile("resources/bullka.png")) {}
 
     // =========================
     // GAME VARIABLES
@@ -112,6 +151,7 @@ int main()
     std::vector<Target> targets;
 
     bool gameOver = false;
+    int score = 0;  
 
     sf::Clock targetSpawnClock;
 
@@ -146,14 +186,14 @@ int main()
                         if (keyEvent->code == sf::Keyboard::Key::Left)
                         {
                             sprite.setPosition(
-                                sf::Vector2f(position.x - 10, position.y)
+                                sf::Vector2f(position.x - 20, position.y)
                             );
                         }
 
                         if (keyEvent->code == sf::Keyboard::Key::Right)
                         {
                             sprite.setPosition(
-                                sf::Vector2f(position.x + 10, position.y)
+                                sf::Vector2f(position.x + 20, position.y)
                             );
                         }
 
@@ -167,7 +207,7 @@ int main()
                                     playerPos.x + image_x / 2,
                                     playerPos.y + image_y / 2
                                 ),
-                                texture
+                                bombTexture
                             );
                         }
                     }
@@ -218,12 +258,11 @@ int main()
                             static_cast<float>(mouseEvent->position.x),
                             static_cast<float>(mouseEvent->position.y)
                         );
-
-                        // Нажатие на кнопку Restart
+                        //работа кнопки рестарт
                         if (restartText.getGlobalBounds().contains(mousePos))
                         {
                             gameOver = false;
-
+                            score = 0; 
                             bombs.clear();
                             targets.clear();
 
@@ -250,7 +289,8 @@ int main()
         {
             float x = static_cast<float>(rand() % (window_x - 40));
 
-            targets.emplace_back(x, -40);
+            int type = rand() % 4;
+            targets.emplace_back(x, -40, type);
 
             targetSpawnClock.restart();
         }
@@ -292,7 +332,8 @@ int main()
                 continue;
 
             if (sprite.getGlobalBounds()
-                    .findIntersection(target.getBounds()))
+                    .findIntersection(target.getBounds())
+                    .has_value())
             {
                 gameOver = true;
             }
@@ -313,9 +354,20 @@ int main()
 
                 if (bomb.getSprite()
                         .getGlobalBounds()
-                        .findIntersection(target.getBounds()))
+                        .findIntersection(target.getBounds())
+                        .has_value())
                 {
-                    target.alive = false;
+                    bool wasAlive = target.alive;
+
+                    target.takeDamage();
+
+                    if (wasAlive && !target.alive)
+                    {
+                        if (target.getType() == 1) score += 20;   
+                        else if (target.getType() == 2) score += 60;  
+                        else if (target.getType() == 3) score += 30;  
+                    }
+
                     bomb.shooted = false;
                 }
             }
@@ -352,7 +404,9 @@ int main()
         // =========================
         // DRAW
         // =========================
-        window.clear(sf::Color(30, 30, 50));
+
+        // Фон
+        window.draw(bgSprite);
 
         // Игрок
         window.draw(sprite);
@@ -374,6 +428,10 @@ int main()
                 target.draw(window);
             }
         }
+
+        // Счёт
+        scoreText.setString("Score: " + std::to_string(score));
+        window.draw(scoreText);
 
         // GAME OVER SCREEN
         if (gameOver)
